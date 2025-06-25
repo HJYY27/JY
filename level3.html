@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>SDGs 保育及永續利用陸域生態系</title>
+  <style>
+    body {
+      margin: 0;
+      background: url('images/草地.jpg') no-repeat center center fixed;
+      background-size: cover;
+      font-family: sans-serif;
+    }
+
+    #instruction {
+      background: rgba(255, 255, 255, 0.9);
+      padding: 20px;
+      margin: 50px auto;
+      width: 80%;
+      border-radius: 12px;
+      text-align: center;
+      font-size: 18px;
+    }
+
+    #startBtn, #restartBtn, #nextBtn {
+      padding: 10px 20px;
+      margin-top: 15px;
+      font-size: 16px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      background-color: #4CAF50;
+      color: white;
+    }
+
+    #gameArea {
+      position: relative;
+      height: 100vh;
+      display: none;
+    }
+
+    .icon {
+      position: absolute;
+      width: 60px;
+      height: 60px;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+
+    #result {
+      position: fixed;
+      top: 30%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(255, 255, 255, 0.95);
+      padding: 30px;
+      border-radius: 15px;
+      text-align: center;
+      display: none;
+      z-index: 10;
+    }
+
+    #scoreDisplay {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      background: rgba(255,255,255,0.8);
+      padding: 10px 15px;
+      border-radius: 10px;
+      font-size: 18px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+<div id="instruction">
+  <h2>SDGs 保育及永續利用陸域生態系</h2>
+  <p>1. 點選瓶子、垃圾桶積5分<br>
+     2. 點選鹿、動物，扣3分<br>
+     3. 超過15分就成功了<br>
+     4. 低於15分要重來一次</p>
+  <button id="startBtn">開始遊戲</button>
+</div>
+
+<div id="gameArea"></div>
+<div id="scoreDisplay">得分：0</div>
+
+<div id="result">
+  <h3 id="resultText"></h3>
+  <button id="restartBtn" style="display:none;" onclick="location.reload()">再玩一次</button>
+  <button id="nextBtn" style="display:none;" onclick="location.href='level4.html'">前往下一關</button>
+</div>
+
+<audio id="bgm" src="音樂.mp4" loop></audio>
+
+<script>
+  const harmfulImages = ['images/瓶子.png', 'images/垃圾桶.png'];
+  const protectImages = ['images/鹿.jpg', 'images/動物.jpg'];
+  let score = 0;
+
+  const gameArea = document.getElementById('gameArea');
+  const resultDiv = document.getElementById('result');
+  const resultText = document.getElementById('resultText');
+  const restartBtn = document.getElementById('restartBtn');
+  const nextBtn = document.getElementById('nextBtn');
+  const scoreDisplay = document.getElementById('scoreDisplay');
+  const bgm = document.getElementById('bgm');
+
+  document.getElementById('startBtn').onclick = () => {
+    document.getElementById('instruction').style.display = 'none';
+    gameArea.style.display = 'block';
+    generateIcons();
+    bgm.play().catch(err => {
+      console.log("背景音樂未能自動播放：", err);
+    });
+  };
+
+  function generateIcons() {
+    const totalIcons = 30;
+    const harmfulCount = 10;  // 為害自然的圖數
+    const protectCount = totalIcons - harmfulCount;
+
+    const icons = [];
+
+    for (let i = 0; i < harmfulCount; i++) {
+      icons.push(harmfulImages[Math.floor(Math.random() * harmfulImages.length)]);
+    }
+    for (let i = 0; i < protectCount; i++) {
+      icons.push(protectImages[Math.floor(Math.random() * protectImages.length)]);
+    }
+
+    icons.forEach(src => {
+      const img = document.createElement('img');
+      img.src = src;
+      img.className = 'icon';
+
+      const angle = Math.floor(Math.random() * 360);
+      const x = Math.random() * window.innerWidth * 0.9;
+      const y = window.innerHeight * 0.5 + Math.random() * window.innerHeight * 0.45;
+
+      img.style.left = `${x}px`;
+      img.style.top = `${y}px`;
+      img.style.transform = `rotate(${angle}deg)`;
+
+      img.onclick = () => handleClick(img, src);
+
+      gameArea.appendChild(img);
+    });
+  }
+
+  function handleClick(img, src) {
+    img.style.display = 'none';
+
+    if (harmfulImages.includes(src)) {
+      score += 5;
+    } else {
+      score -= 3;
+    }
+
+    scoreDisplay.textContent = `得分：${score}`;
+
+    const remainingIcons = document.querySelectorAll('.icon:not([style*="display: none"])');
+    if (remainingIcons.length === 0 || score >= 15) {
+      setTimeout(showResult, 300);
+    }
+  }
+
+  function showResult() {
+    resultDiv.style.display = 'block';
+    if (score >= 15) {
+      resultText.textContent = '任務成功！';
+      nextBtn.style.display = 'inline-block';
+    } else {
+      resultText.textContent = '分數未達標，請再接再厲！';
+      restartBtn.style.display = 'inline-block';
+    }
+  }
+</script>
+
+</body>
+</html>

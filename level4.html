@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SDGs 保育 - 第四關</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+      background-image: url('images/草地.jpg');
+      background-size: cover;
+      overflow: hidden;
+    }
+    #game-header {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      font-size: 24px;
+      font-weight: bold;
+      color: #333;
+    }
+    #score-display {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      font-size: 24px;
+      font-weight: bold;
+      color: #333;
+    }
+    #goal-info {
+      position: absolute;
+      top: 50px;
+      right: 10px;
+      font-size: 18px;
+      color: #333;
+      background-color: rgba(255, 255, 255, 0.7);
+      padding: 5px 10px;
+      border-radius: 5px;
+    }
+    #game-container {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+    }
+    #rabbit {
+      position: absolute;
+      width: 120px;
+      height: 120px;
+      bottom: 100px;
+      left: 50px;
+      background-image: url('images/兔子.png');
+      background-size: contain;
+      background-repeat: no-repeat;
+    }
+    .obstacle {
+      position: absolute;
+      width: 90px;
+      height: 90px;
+      bottom: 100px;
+      left: 100vw;
+      background-size: contain;
+      background-repeat: no-repeat;
+    }
+    #game-instructions,
+    #game-over,
+    #level-complete {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background-color: rgba(255, 255, 255, 0.9);
+      padding: 20px;
+      border-radius: 10px;
+      text-align: center;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+    }
+    #game-instructions {
+      display: block;
+    }
+    #game-over,
+    #level-complete {
+      display: none;
+    }
+    #start-button,
+    #retry-button,
+    #next-level-button {
+      margin-top: 15px;
+      padding: 10px 20px;
+      font-size: 18px;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    #start-button {
+      background-color: #4CAF50;
+    }
+    #start-button:hover {
+      background-color: #45a049;
+    }
+    #retry-button {
+      background-color: #f44336;
+    }
+    #retry-button:hover {
+      background-color: #d32f2f;
+    }
+    #next-level-button {
+      background-color: #2196F3;
+    }
+    #next-level-button:hover {
+      background-color: #0b7dda;
+    }
+    #music-control {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      background-color: rgba(255, 255, 255, 0.7);
+      padding: 5px 10px;
+      border-radius: 5px;
+      font-size: 14px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="game-header">SDGs 保育</div>
+  <div id="score-display">分數: 0</div>
+  <div id="goal-info">目標: 50分</div>
+
+  <div id="game-container">
+    <div id="rabbit"></div>
+
+    <div id="game-instructions">
+      <h2>遊戲說明</h2>
+      <p>按空白鍵，讓兔子避開障礙物</p>
+      <p>收集50分即可過關</p>
+      <button id="start-button">開始遊戲</button>
+    </div>
+
+    <div id="game-over">
+      <h2>遊戲結束</h2>
+      <p>你的分數: <span id="final-score">0</span>/50</p>
+      <button id="retry-button">再次挑戰</button>
+    </div>
+
+    <div id="level-complete">
+      <h2>恭喜過關!</h2>
+      <p>你的分數: <span id="complete-score">0</span>/50</p>
+      <button id="next-level-button">下一關</button>
+    </div>
+
+    <div id="music-control">
+      <span>背景音樂: </span>
+      <button id="mute-button">靜音</button>
+    </div>
+  </div>
+
+  <audio id="bg-music" loop>
+    <source src="音樂.mp4" type="audio/mp4">
+    您的瀏覽器不支援音頻元素。
+  </audio>
+
+  <script>
+    const rabbit = document.getElementById('rabbit');
+    const gameContainer = document.getElementById('game-container');
+    const scoreDisplay = document.getElementById('score-display');
+    const goalInfo = document.getElementById('goal-info');
+    const gameInstructions = document.getElementById('game-instructions');
+    const startButton = document.getElementById('start-button');
+    const gameOverScreen = document.getElementById('game-over');
+    const retryButton = document.getElementById('retry-button');
+    const finalScoreDisplay = document.getElementById('final-score');
+    const levelCompleteScreen = document.getElementById('level-complete');
+    const nextLevelButton = document.getElementById('next-level-button');
+    const completeScoreDisplay = document.getElementById('complete-score');
+    const bgMusic = document.getElementById('bg-music');
+    const musicControl = document.getElementById('music-control');
+    const muteButton = document.getElementById('mute-button');
+
+    const TARGET_SCORE = 50;
+    let score = 0;
+    let isJumping = false;
+    let isGameOver = false;
+    let gameStarted = false;
+    let obstacleInterval;
+    let isMuted = false;
+
+    startButton.addEventListener('click', startGame);
+    retryButton.addEventListener('click', () => location.reload());
+    nextLevelButton.addEventListener('click', () => window.location.href = 'level5.html');
+    muteButton.addEventListener('click', toggleMute);
+
+    document.addEventListener('keydown', (event) => {
+      if (event.code === 'Space' && !isJumping && gameStarted && !isGameOver) {
+        jump();
+        event.preventDefault();
+      }
+    });
+
+    function startGame() {
+      gameInstructions.style.display = 'none';
+      gameStarted = true;
+      score = 0;
+      updateScore();
+      bgMusic.play().catch(e => console.log('播放被阻止:', e));
+      musicControl.style.display = 'block';
+      obstacleInterval = setInterval(createObstacle, 1800);
+    }
+
+    function jump() {
+      if (isJumping) return;
+      isJumping = true;
+      let jumpHeight = 0;
+      const jumpUp = setInterval(() => {
+        rabbit.style.bottom = (100 + jumpHeight) + 'px';
+        jumpHeight += 6;
+        if (jumpHeight > 250) { // 🆙 調整跳躍高度為 250
+          clearInterval(jumpUp);
+          const jumpDown = setInterval(() => {
+            rabbit.style.bottom = (100 + jumpHeight) + 'px';
+            jumpHeight -= 6;
+            if (jumpHeight <= 0) {
+              clearInterval(jumpDown);
+              rabbit.style.bottom = '100px';
+              isJumping = false;
+            }
+          }, 20);
+        }
+      }, 20);
+    }
+
+    function createObstacle() {
+      if (isGameOver) return;
+      const obstacle = document.createElement('div');
+      obstacle.className = 'obstacle';
+      const type = Math.random() > 0.5 ? 'images/垃圾.png' : 'images/斧頭.png';
+      obstacle.style.backgroundImage = `url('${type}')`;
+      obstacle.style.left = '100vw';
+      gameContainer.appendChild(obstacle);
+
+      let position = window.innerWidth;
+      const move = setInterval(() => {
+        if (isGameOver) {
+          clearInterval(move);
+          return;
+        }
+
+        position -= 12;
+        obstacle.style.left = position + 'px';
+
+        const rabbitRect = rabbit.getBoundingClientRect();
+        const obstacleRect = obstacle.getBoundingClientRect();
+
+        if (
+          rabbitRect.left < obstacleRect.right &&
+          rabbitRect.right > obstacleRect.left &&
+          rabbitRect.top < obstacleRect.bottom &&
+          rabbitRect.bottom > obstacleRect.top
+        ) {
+          clearInterval(move);
+          gameOver();
+        }
+
+        if (position < -100) {
+          clearInterval(move);
+          obstacle.remove();
+          score += 5;
+          updateScore();
+          if (score >= TARGET_SCORE) {
+            completeLevel();
+          }
+        }
+      }, 20);
+    }
+
+    function updateScore() {
+      scoreDisplay.textContent = `分數: ${score}`;
+      scoreDisplay.style.color = score >= TARGET_SCORE ? '#4CAF50' : (score >= TARGET_SCORE - 10 ? '#FF9800' : '#333');
+    }
+
+    function gameOver() {
+      isGameOver = true;
+      clearInterval(obstacleInterval);
+      finalScoreDisplay.textContent = score;
+      gameOverScreen.style.display = 'block';
+    }
+
+    function completeLevel() {
+      isGameOver = true;
+      clearInterval(obstacleInterval);
+      completeScoreDisplay.textContent = score;
+      levelCompleteScreen.style.display = 'block';
+    }
+
+    function toggleMute() {
+      isMuted = !isMuted;
+      bgMusic.muted = isMuted;
+      muteButton.textContent = isMuted ? "取消靜音" : "靜音";
+    }
+  </script>
+</body>
+</html>
+

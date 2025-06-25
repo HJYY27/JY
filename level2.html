@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>SDGs 保育及永續利用陸域生態系 - 第二關</title>
+<style>
+  body {
+    margin: 0; padding: 0;
+    font-family: "微軟正黑體", sans-serif;
+    background: url('images/森林.jpg') no-repeat center bottom;
+    background-size: cover;
+    height: 100vh;
+    display: flex; flex-direction: column;
+  }
+  header {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 20px;
+    background: rgba(255,255,255,0.8);
+    font-size: 18px;
+    font-weight: bold;
+    display: none;
+  }
+  #intro-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background: rgba(255,255,255,0.9);
+    margin: 40px;
+    padding: 30px;
+    border-radius: 20px;
+    text-align: center;
+    box-shadow: 0 0 15px rgba(0,0,0,0.3);
+  }
+  #intro-area h2 {
+    margin-bottom: 20px;
+    color: #2e7d32;
+  }
+  #start-btn {
+    padding: 12px 40px;
+    font-size: 18px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    background-color: #4CAF50;
+    color: white;
+  }
+  #start-btn:hover {
+    background-color: #388E3C;
+  }
+
+  #game-area {
+    flex: 1;
+    position: relative;
+    padding: 20px;
+    display: none;
+    justify-content: space-around;
+    align-items: flex-start;
+  }
+  .flower-container {
+    position: relative;
+    width: 30vw;
+    min-width: 280px;
+    background: rgba(255,255,255,0.9);
+    border-radius: 10px;
+    padding: 10px;
+    box-shadow: 2px 2px 10px rgba(0,0,0,0.3);
+  }
+  .flower-img {
+    position: absolute;
+    top: -80px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80px;
+    height: 80px;
+    user-select: none;
+  }
+  .drop-zones {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 70px;
+  }
+  .drop-zone {
+    width: 48%;
+    min-height: 140px;
+    border: 2px dashed #4CAF50;
+    border-radius: 8px;
+    padding: 10px;
+    background: #e8f5e9;
+    box-sizing: border-box;
+  }
+  .drop-zone h4 {
+    margin: 0 0 10px 0;
+    color: #2e7d32;
+    font-weight: 600;
+  }
+  .draggable-item {
+    background: #c8e6c9;
+    margin: 5px 0;
+    padding: 8px 10px;
+    border-radius: 5px;
+    cursor: grab;
+    user-select: none;
+  }
+  .draggable-item.dragging {
+    opacity: 0.5;
+  }
+  #result-area {
+    position: fixed;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(255,255,255,0.95);
+    padding: 30px 50px;
+    border-radius: 15px;
+    text-align: center;
+    display: none;
+    box-shadow: 0 0 20px #4caf50;
+  }
+  #result-area h2 {
+    margin-bottom: 15px;
+  }
+  #retry-btn, #next-btn {
+    margin-top: 20px;
+    padding: 10px 30px;
+    font-size: 18px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    background-color: #4CAF50;
+    color: white;
+  }
+  #retry-btn:hover, #next-btn:hover {
+    background-color: #388E3C;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div id="title">SDGs 保育及永續利用陸域生態系</div>
+  <div>答對題數：<span id="score">0</span> / 6</div>
+</header>
+
+<div id="intro-area">
+  <h2>6 題全部做答結束，如果等級是「再加油」、「進步中」，就要「再次挑戰」</h2>
+  <button id="start-btn">開始遊戲</button>
+</div>
+
+<div id="game-area"></div>
+
+<div id="result-area">
+  <h2 id="final-result"></h2>
+  <button id="retry-btn" style="display:none;">再次挑戰</button>
+  <button id="next-btn" style="display:none;">前往下一關</button>
+</div>
+
+<!-- 背景音樂元素 -->
+<audio id="bgm" src="音樂.mp4" loop></audio>
+
+<script>
+const questions = [
+  [
+    { text: "不隨意採摘野生植物", correctZone: "left" },
+    { text: "亂丟垃圾破壞環境", correctZone: "right" },
+  ],
+  [
+    { text: "支持使用環保產品", correctZone: "left" },
+    { text: "破壞樹木建造非法設施", correctZone: "right" },
+  ],
+  [
+    { text: "參加自然保育志工活動", correctZone: "left" },
+    { text: "在保育區內大聲喧嘩", correctZone: "right" },
+  ],
+];
+
+const gameArea = document.getElementById("game-area");
+const scoreDisplay = document.getElementById("score");
+const resultArea = document.getElementById("result-area");
+const finalResult = document.getElementById("final-result");
+const retryBtn = document.getElementById("retry-btn");
+const nextBtn = document.getElementById("next-btn");
+const startBtn = document.getElementById("start-btn");
+const introArea = document.getElementById("intro-area");
+const header = document.querySelector("header");
+const bgm = document.getElementById("bgm");
+
+let score = 0;
+let answeredCount = 0;
+
+startBtn.addEventListener('click', () => {
+  introArea.style.display = "none";
+  header.style.display = "flex";
+  gameArea.style.display = "flex";
+  bgm.play(); // 播放背景音樂
+  init();
+});
+
+function generateFlowerPositions() {
+  const positions = [];
+  const containerWidth = window.innerWidth;
+  const lowerHalfTop = window.innerHeight / 2 + 100;
+
+  for (let i=0; i<3; i++) {
+    const left = containerWidth / 6 + (i * containerWidth / 3) + (Math.random()*50 - 25);
+    const top = lowerHalfTop + Math.random() * (window.innerHeight - lowerHalfTop - 100);
+    positions.push({left, top});
+  }
+  return positions;
+}
+
+function makeDraggable(elem) {
+  elem.draggable = true;
+  elem.addEventListener('dragstart', e => {
+    e.dataTransfer.setData('text/plain', e.target.id);
+    e.target.classList.add('dragging');
+  });
+  elem.addEventListener('dragend', e => {
+    e.target.classList.remove('dragging');
+  });
+}
+
+function createFlowerGroup(idx, pos, qGroup) {
+  const container = document.createElement('div');
+  container.classList.add('flower-container');
+
+  const flowerImg = document.createElement('img');
+  flowerImg.src = 'images/花.png';
+  flowerImg.alt = '花朵';
+  flowerImg.classList.add('flower-img');
+  container.appendChild(flowerImg);
+
+  const title = document.createElement('h3');
+  title.textContent = `第 ${idx+1} 組題目`;
+  title.style.textAlign = 'center';
+  container.appendChild(title);
+
+  const dropZones = document.createElement('div');
+  dropZones.classList.add('drop-zones');
+
+  const leftZone = document.createElement('div');
+  leftZone.classList.add('drop-zone');
+  leftZone.dataset.side = 'left';
+  leftZone.innerHTML = '<h4>正確行為</h4>';
+
+  const rightZone = document.createElement('div');
+  rightZone.classList.add('drop-zone');
+  rightZone.dataset.side = 'right';
+  rightZone.innerHTML = '<h4>錯誤行為</h4>';
+
+  dropZones.appendChild(leftZone);
+  dropZones.appendChild(rightZone);
+  container.appendChild(dropZones);
+
+  const sentencesArea = document.createElement('div');
+  sentencesArea.style.marginTop = '10px';
+
+  qGroup.forEach((q, i) => {
+    const item = document.createElement('div');
+    item.textContent = q.text;
+    item.classList.add('draggable-item');
+    item.id = `item-${idx}-${i}`;
+    makeDraggable(item);
+    sentencesArea.appendChild(item);
+  });
+
+  container.appendChild(sentencesArea);
+
+  [leftZone, rightZone].forEach(zone => {
+    zone.addEventListener('dragover', e => {
+      e.preventDefault();
+      zone.style.backgroundColor = '#c8e6c9';
+    });
+    zone.addEventListener('dragleave', e => {
+      zone.style.backgroundColor = '#e8f5e9';
+    });
+    zone.addEventListener('drop', e => {
+      e.preventDefault();
+      zone.style.backgroundColor = '#e8f5e9';
+      const draggedId = e.dataTransfer.getData('text/plain');
+      const draggedElem = document.getElementById(draggedId);
+      if (!draggedElem || draggedElem.dataset.answered === 'true') return;
+
+      const groupIndex = parseInt(draggedId.split('-')[1]);
+      const itemIndex = parseInt(draggedId.split('-')[2]);
+      const correctSide = questions[groupIndex][itemIndex].correctZone;
+      const chosenSide = zone.dataset.side;
+
+      if (correctSide === chosenSide) {
+        zone.appendChild(draggedElem);
+        draggedElem.style.backgroundColor = '#81c784';
+        draggedElem.style.cursor = 'default';
+        draggedElem.draggable = false;
+        draggedElem.dataset.answered = 'true';
+        score++;
+        scoreDisplay.textContent = score;
+        answeredCount++;
+        checkFinish();
+      } else {
+        draggedElem.style.backgroundColor = '#e57373';
+        setTimeout(() => {
+          draggedElem.style.backgroundColor = '#c8e6c9';
+        }, 700);
+      }
+    });
+  });
+
+  return container;
+}
+
+function checkFinish() {
+  if (answeredCount >= 6) {
+    let level = '';
+    if (score <= 2) level = '再加油';
+    else if (score <= 4) level = '進步中';
+    else level = '保育達人';
+
+    finalResult.textContent = `你的保育等級：${level}`;
+    resultArea.style.display = 'block';
+
+    if (level === '保育達人') {
+      retryBtn.style.display = 'none';
+      nextBtn.style.display = 'inline-block';
+    } else {
+      retryBtn.style.display = 'inline-block';
+      nextBtn.style.display = 'none';
+    }
+  }
+}
+
+retryBtn.addEventListener('click', () => location.reload());
+nextBtn.addEventListener('click', () => location.href = 'level3.html');
+
+function init() {
+  const positions = generateFlowerPositions();
+  for (let i = 0; i < 3; i++) {
+    const flowerGroup = createFlowerGroup(i, positions[i], questions[i]);
+    gameArea.appendChild(flowerGroup);
+  }
+}
+</script>
+</body>
+</html>
+

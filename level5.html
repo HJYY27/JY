@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <title>SDGs 環境</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: sans-serif;
+      background-image: url('images/草地.jpg');
+      background-size: cover;
+      background-repeat: no-repeat;
+      background-position: center;
+      height: 100vh;
+    }
+    #title {
+      position: absolute;
+      top: 10px;
+      left: 20px;
+      font-size: 28px;
+      font-weight: bold;
+      color: #fff;
+      background-color: rgba(0,0,0,0.5);
+      padding: 8px 16px;
+      border-radius: 10px;
+    }
+    #progress {
+      position: absolute;
+      top: 10px;
+      right: 20px;
+      font-size: 20px;
+      color: #fff;
+      background-color: rgba(0,0,0,0.5);
+      padding: 8px 16px;
+      border-radius: 10px;
+    }
+    #instruction {
+      position: absolute;
+      top: 30%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(255,255,255,0.95);
+      padding: 30px;
+      border-radius: 15px;
+      text-align: center;
+    }
+    #startButton {
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 18px;
+      cursor: pointer;
+    }
+    #questionContainer {
+      display: none;
+      position: absolute;
+      top: 25%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 80%;
+      background: rgba(255, 255, 255, 0.95);
+      padding: 30px;
+      border-radius: 15px;
+    }
+    .question {
+      margin-bottom: 25px;
+    }
+    .question h3 {
+      margin-bottom: 10px;
+    }
+    .question button {
+      margin: 5px;
+      padding: 8px 16px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    #result {
+      display: none;
+      position: absolute;
+      top: 40%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(255,255,255,0.95);
+      padding: 30px;
+      border-radius: 15px;
+      text-align: center;
+      font-size: 22px;
+      font-weight: bold;
+    }
+    #retryButton {
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 18px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div id="title">SDGs 環境</div>
+  <div id="progress">第 0 / 8 題</div>
+
+  <!-- 音樂 -->
+  <audio id="bgm" src="images/images/音樂.mp4" loop></audio>
+
+  <!-- 遊戲說明 -->
+  <div id="instruction">
+    <h2>請選擇正確的答案</h2>
+    <p>一題5分，超過25分就過關</p>
+    <button id="startButton">開始遊戲</button>
+  </div>
+
+  <!-- 題目區塊 -->
+  <div id="questionContainer"></div>
+
+  <!-- 結果 -->
+  <div id="result"></div>
+
+  <script>
+    const questions = [
+      {
+        q: "我們可以怎麼保護森林？",
+        options: ["亂砍樹木", "植樹造林", "點火燒山"],
+        answer: 1
+      },
+      {
+        q: "哪一個行為對動物有幫助？",
+        options: ["破壞棲息地", "餵野生動物", "保護牠們的家園"],
+        answer: 2
+      },
+      {
+        q: "保護土地的方法是？",
+        options: ["隨地丟垃圾", "防止水土流失", "開發濕地"],
+        answer: 1
+      },
+      {
+        q: "下列何者有助於生物多樣性？",
+        options: ["保護各種動植物", "只保護可愛的動物", "獵殺稀有動物"],
+        answer: 0
+      },
+      {
+        q: "如果看到垃圾，我們應該？",
+        options: ["撿起來", "不理它", "踢到水裡"],
+        answer: 0
+      },
+      {
+        q: "哪一項做法是正確的？",
+        options: ["亂倒廢水", "維護自然環境", "踩踏草地"],
+        answer: 1
+      },
+      {
+        q: "怎樣可以減少土地劣化？",
+        options: ["過度放牧", "濫墾濫伐", "推廣永續農業"],
+        answer: 2
+      },
+      {
+        q: "哪一項符合SDGs對陸域生態的目標？",
+        options: ["保護森林與濕地", "砍伐原始林", "建立工廠在山林間"],
+        answer: 0
+      }
+    ];
+
+    let currentQuestion = 0;
+    let score = 0;
+
+    const instruction = document.getElementById('instruction');
+    const startButton = document.getElementById('startButton');
+    const questionContainer = document.getElementById('questionContainer');
+    const progress = document.getElementById('progress');
+    const result = document.getElementById('result');
+    const bgm = document.getElementById('bgm');
+
+    startButton.addEventListener('click', () => {
+      instruction.style.display = 'none';
+      questionContainer.style.display = 'block';
+      bgm.play();
+      showQuestion();
+    });
+
+    function showQuestion() {
+      if (currentQuestion >= questions.length) {
+        endGame();
+        return;
+      }
+
+      progress.textContent = `第 ${currentQuestion + 1} / ${questions.length} 題`;
+      const q = questions[currentQuestion];
+      questionContainer.innerHTML = `
+        <div class="question">
+          <h3>${q.q}</h3>
+          ${q.options.map((opt, i) =>
+            `<button onclick="selectAnswer(${i})">${opt}</button>`
+          ).join('')}
+        </div>
+      `;
+    }
+
+    function selectAnswer(index) {
+      if (index === questions[currentQuestion].answer) {
+        score += 5;
+      }
+      currentQuestion++;
+      showQuestion();
+    }
+
+    function endGame() {
+      questionContainer.style.display = 'none';
+      result.style.display = 'block';
+
+      if (score > 25) {
+        result.innerHTML = `🎉 恭喜全過關！<br>總分：${score} 分`;
+      } else {
+        result.innerHTML = `
+          再接再厲！<br>總分：${score} 分<br>
+          <button id="retryButton" onclick="location.reload()">重新挑戰</button>
+        `;
+      }
+    }
+  </script>
+</body>
+</html>

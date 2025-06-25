@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SDGs 保育及永續利用陸域生態系，確保生物多樣性並防止土地劣化</title>
+  <style>
+    body {
+      font-family: "Microsoft JhengHei", sans-serif;
+      background: url('images/森林.jpg') no-repeat center center fixed;
+      background-size: cover;
+      margin: 0;
+      padding: 0;
+      color: #333;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px;
+      background-color: rgba(255, 255, 255, 0.8);
+    }
+
+    .title {
+      font-size: 20px;
+      font-weight: bold;
+    }
+
+    .score {
+      font-size: 16px;
+    }
+
+    .game-container {
+      display: none;
+      justify-content: center;
+      gap: 50px;
+      margin: 30px;
+      padding: 20px;
+      background-color: rgba(255, 255, 255, 0.85);
+      border-radius: 15px;
+    }
+
+    .column {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .item {
+      padding: 10px 20px;
+      background-color: #dfffdc;
+      border-radius: 10px;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: all 0.2s;
+    }
+
+    .item:hover {
+      background-color: #b0efad;
+    }
+
+    .item.selected {
+      border-color: #66bb6a;
+    }
+
+    .result {
+      text-align: center;
+      margin-top: 30px;
+      font-size: 20px;
+    }
+
+    #bunny {
+      display: none;
+      width: 200px;
+      margin: 20px auto;
+    }
+
+    button {
+      margin: 10px;
+      padding: 10px 20px;
+      font-size: 16px;
+      border-radius: 10px;
+      background-color: #66bb6a;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #558b2f;
+    }
+
+    #instructions {
+      text-align: center;
+      margin-top: 50px;
+      background-color: rgba(255,255,255,0.9);
+      padding: 30px;
+      border-radius: 15px;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="title">SDGs 保育及永續利用陸域生態系，確保生物多樣性並防止土地劣化</div>
+    <div class="score">答對題數：<span id="score">0</span>/5</div>
+  </header>
+
+  <!-- 遊戲說明 -->
+  <div id="instructions">
+    <p><strong>遊戲說明：</strong></p>
+    <p>1. 請完成以下配對</p>
+    <p>2. 少於2題請重新開始</p>
+    <button onclick="startGame()">開始遊戲</button>
+  </div>
+
+  <!-- 遊戲區域 -->
+  <div class="game-container" id="game">
+    <div class="column" id="questions">
+      <div class="item" data-match="森林砍伐">什麼行為會造成棲息地喪失？</div>
+      <div class="item" data-match="保育區">設立哪種區域能保護生物？</div>
+      <div class="item" data-match="外來種">哪種物種會破壞生態平衡？</div>
+      <div class="item" data-match="永續農業">什麼農法有助於土地保育？</div>
+      <div class="item" data-match="環境教育">哪種方式可提升保育意識？</div>
+    </div>
+
+    <div class="column" id="answers">
+      <div class="item" data-answer="永續農業">永續農業</div>
+      <div class="item" data-answer="森林砍伐">森林砍伐</div>
+      <div class="item" data-answer="環境教育">環境教育</div>
+      <div class="item" data-answer="保育區">保育區</div>
+      <div class="item" data-answer="外來種">外來種</div>
+    </div>
+  </div>
+
+  <!-- 結果與兔子 -->
+  <div class="result" id="result"></div>
+  <img id="bunny" src="images/兔子.png" alt="兔子拿花" />
+  <div style="text-align: center;" id="buttons"></div>
+
+  <!-- 音樂播放器（隱藏） -->
+  <audio id="bgm" src="音樂.mp4" loop></audio>
+
+  <script>
+    function startGame() {
+      document.getElementById("instructions").style.display = "none";
+      document.getElementById("game").style.display = "flex";
+      const audio = document.getElementById("bgm");
+      audio.play().catch(err => {
+        console.warn("自動播放失敗，請使用者互動後再播放：", err);
+      });
+    }
+
+    let selectedQuestion = null;
+    let score = 0;
+    let answered = 0;
+
+    const questions = document.querySelectorAll("#questions .item");
+    const answers = document.querySelectorAll("#answers .item");
+    const scoreDisplay = document.getElementById("score");
+    const result = document.getElementById("result");
+    const bunny = document.getElementById("bunny");
+    const buttons = document.getElementById("buttons");
+
+    questions.forEach(q => {
+      q.addEventListener("click", () => {
+        questions.forEach(item => item.classList.remove("selected"));
+        q.classList.add("selected");
+        selectedQuestion = q;
+      });
+    });
+
+    answers.forEach(a => {
+      a.addEventListener("click", () => {
+        if (!selectedQuestion || selectedQuestion.classList.contains("done")) return;
+
+        const match = selectedQuestion.dataset.match;
+        const answer = a.dataset.answer;
+
+        if (match === answer) {
+          score++;
+        }
+
+        scoreDisplay.textContent = score;
+        selectedQuestion.classList.add("done");
+        selectedQuestion.style.opacity = 0.5;
+        a.style.opacity = 0.5;
+        selectedQuestion.classList.remove("selected");
+
+        selectedQuestion = null;
+        answered++;
+
+        if (answered === 5) {
+          endGame();
+        }
+      });
+    });
+
+    function endGame() {
+      bunny.style.display = "block";
+      if (score < 2) {
+        result.textContent = "請重新挑戰！";
+        buttons.innerHTML = `<button onclick="location.reload()">重新挑戰</button>`;
+      } else {
+        result.textContent = "恭喜過關！準備進入下一關～";
+        buttons.innerHTML = `<button onclick="location.href='level2.html'">前往下一關</button>`;
+      }
+    }
+  </script>
+</body>
+</html>
+
